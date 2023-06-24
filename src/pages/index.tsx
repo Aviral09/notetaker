@@ -22,9 +22,10 @@ const Home: NextPage = () => {
       </main>
     </>
   );
-};
+  };
 
 export default Home;
+
 
 type Topic = RouterOutputs["topic"]["getAll"][0];
 
@@ -46,6 +47,14 @@ const Content: React.FC = () => {
   const createTopic = api.topic.create.useMutation({
     onSuccess: () => {
       void refetchTopics();
+    }
+  });
+
+  const deleteTopic = api.topic.delete.useMutation({
+    onSuccess: () => {
+      void refetchTopics();
+      void refetchNotes();
+      setSelectedTopic(null);
     }
   });
 
@@ -74,34 +83,39 @@ const Content: React.FC = () => {
   return (
     <div className="mx-5 mt-5 grid grid-cols-4 gap-2">
       <div className="px-2">
-        <ul className="menu rounded-box w-56 bg-base-100 p-2">
-          {topics?.map((topic) => (
-            <li key={topic.id}>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedTopic(topic);
-                }}
-              >
-                {topic.title}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <input
-          type="text"
-          placeholder="New Topic"
-          className="input-bordering input input-sm w-full"
-          onKeyDown={(e) => {
-            if(e.key == "Enter") {
-              createTopic.mutate({
-                title: e.currentTarget.value,
-              });
-              e.currentTarget.value = "";
-            }
-          }}
-          />
+        <div className="card mt-5 border border-gray-200 bg-base-100 shadow-xl">
+          <ul className="menu rounded-box p-2">
+            {topics?.map((topic) => (
+              <li key={topic.id}>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedTopic(topic);
+                  }}
+                >
+                  {topic.title}
+                </a>
+                <button className="btn-warning btn-xs btn px-5" onClick={() => void deleteTopic.mutate({ id: topic.id })}>
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+          <input
+            type="text"
+            placeholder="New Topic"
+            className="input-bordering input input-sm w-full bg-base-200"
+            onKeyDown={(e) => {
+              if(e.key == "Enter") {
+                createTopic.mutate({
+                  title: e.currentTarget.value,
+                });
+                e.currentTarget.value = "";
+              }
+            }}
+            />
+        </div>
       </div>
       <div className="col-span-3">
         <div>
@@ -117,6 +131,7 @@ const Content: React.FC = () => {
 
         <NoteEditor 
           onSave= {({ title, content }) => { 
+            if(selectedTopic==null) alert("Please select/create a topic first!")
             void createNote.mutate({
               title,
               content,
